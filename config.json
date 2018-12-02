@@ -1,7 +1,7 @@
 {
   "clientId": "Q0Wyx2rqmKZvwI2RgbXhIJjBZTvagPl5IS3GeFO6jEquP0Yv1Y",
   "clientSecret": "9mPTzFo2ddMRNt2zWtBsauYsQcvrbLbQ8Lhdyj17",
-  "redirectUri": "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl",
+  "redirectUri": "https://f55e8c3d.ngrok.io/callback",
   "configurationEndpoint": "https://developer.api.intuit.com/.well-known/openid_sandbox_configuration/",
   "authorization_endpoint":"https://appcenter.intuit.com/connect/oauth2",
   "token_endpoint":"https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",

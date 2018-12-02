@@ -67,62 +67,25 @@
     <body>
 
         <div class="container">
-
-            <h1>
-                <a href="http://developer.intuit.com">
-                    <img src="quickbooks_logo_horz.png" id="headerLogo">
-                </a>
-
-            </h1>
-
-            <hr>
-
+            <hr />
             <div class="well text-center">
 
-                <h1>Intuit Webhooks Demo in Javascript with Express</h1>
+                <h3>Quota</h3>
 
                 <br>
 
             </div>
+            {{#if token_json}}
+            <h4 class="bg-success">Client Authorized</h4>
+            {{else}}
+            <a class="btn btn-lg btn-success" href="#" onclick="oauth.loginPopup()">Authorize Client</a>
+            {{/if}}
+            <!-- <hr />
 
-            <h2>Access Token</h2>
-            <p>If there is no access token or the access token is invalid, click the <b>Connect to QucikBooks</b> button below.</p>
-            <pre>{{ token_json }}</pre>
-            <a class="imgLink" href="#" onclick="oauth.loginPopup()"><img src="C2QB_green_btn_lg_default.png" width="178" /></a>
-            <hr />
-
-            <h2>Create a Sample Customer to test Webhooks </h2>
-            <p>Provide any sample <strong>Display Name</strong> below : <i>( this is just for demo purpose )</i></p><input type="text" id="displayName" name="displayName" value=""><hr />
-            <pre id="createCustomer"></pre>
-            <a class="btn btn-primary btn-lg" value="Create Customer" role="button" onclick="hooks.createCustomer($('#displayName').val());">Create Customer</a>
+            <input type="text" id="displayName" name="displayName" value="" placeholder="Consumer Name">
+            <a class="btn btn-primary btn-sm" value="Create Consumer" role="button" onclick="hooks.createCustomer($('#displayName').val());">Create Consumer</a> -->
 
             <hr />
-
-            <h2>Read Webhooks</h2>
-            <p>Look at the terminal window to recieve <em>Webhook Notifications</em> : </p>
-            <p>However, you can find the webhook notifications captured in the ( csv ) file below </p>
-            <!--<hr />-->
-            <br>
-            <div class="well text-center">
-                <a href='../file.csv' target="_blank">
-                    <img src="csv.png" id="csvLogo">
-                </a>
-            </div>
-
-
-            <p>More info:</p>
-            <ul>
-                <li><a href="https://developer.intuit.com/docs">Intuit API Developer Guide</a></li>
-                <li><a href="https://developer.intuit.com/docs/00_quickbooks_online/2_build/50_sample_apps_and_code">Intuit Sample Apps and Code</a></li>
-                <li><a href="https://developer.intuit.com/docs/00_quickbooks_online/2_build/40_sdks">Intuit Official SDK's</a></li>
-                <li><a href="https://github.com/anilkumarbp/intuit-demos-webhooks">Github Repo</a></li>
-                <li><a href="https://github.com/anilkumarbp/intuit-demos-webhooks/issues">Report Issues</a></li>
-            </ul>
-            <hr>
-            <p class="text-center text-muted">
-                &copy; 2018 Intuit&trade;, Inc. All rights reserved. Intuit and QuickBooks are registered trademarks of Intuit Inc.
-                <script> document.getElementById('date').innerHTML = (new Date()).getFullYear().toString(); </script>
-            </p>
 
         </div>
     </body>

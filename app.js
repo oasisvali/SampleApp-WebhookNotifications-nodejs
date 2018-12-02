@@ -13,6 +13,8 @@ var fs = require('fs');
 var json2csv = require('json2csv');
 var Tokens = require('csrf');
 var csrf = new Tokens();
+var AWS = require("aws-sdk");
+var dynamodb = require("./dynamodb");
 
 // Configure View and Handlebars
 app.use(express.static(path.join(__dirname, '')))
@@ -34,6 +36,7 @@ var urlencodedParser = bodyParser.urlencoded({ extended: false })
 App Variables
  */
 var token_json,realmId,payload;
+var lastChangeDate = 0;
 var fields = ['realmId', 'name', 'id', 'operation', 'lastUpdated'];
 var newLine= "\r\n";
 
@@ -107,10 +110,13 @@ app.get('/callback', function(req, res) {
     });
     res.send('');
 
+    // add client to DynamoDB
+    dynamodb.createClient(AWS, { clientId: realmId });
+
 });
 
 
-app.post('/webhook', function(req, res) {
+app.post('/webhooks', function(req, res) {
 
     var webhookPayload = JSON.stringify(req.body);
     var signature = req.get('intuit-signature');
@@ -138,48 +144,48 @@ app.post('/webhook', function(req, res) {
         /**
          * Write the notification to CSV file
          */
-        var appendThis = [];
-        for(var i=0; i < req.body.eventNotifications.length; i++) {
-            var entities = req.body.eventNotifications[i].dataChangeEvent.entities;
-            var realmID = req.body.eventNotifications[i].realmId;
-            for(var j=0; j < entities.length; j++) {
-                var notification = {
-                    'realmId': realmID,
-                    'name': entities[i].name,
-                    'id': entities[i].id,
-                    'operation': entities[i].operation,
-                    'lastUpdated': entities[i].lastUpdated
-                }
-                appendThis.push(notification);
-            }
-        }
+        // var appendThis = [];
+        // for(var i=0; i < req.body.eventNotifications.length; i++) {
+        //     var entities = req.body.eventNotifications[i].dataChangeEvent.entities;
+        //     var realmID = req.body.eventNotifications[i].realmId;
+        //     for(var j=0; j < entities.length; j++) {
+        //         var notification = {
+        //             'realmId': realmID,
+        //             'name': entities[i].name,
+        //             'id': entities[i].id,
+        //             'operation': entities[i].operation,
+        //             'lastUpdated': entities[i].lastUpdated
+        //         }
+        //         appendThis.push(notification);
+        //     }
+        // }
 
-        var toCsv = {
-            data: appendThis,
-            fields: fields
-        };
-
-        fs.stat('file.csv', function (err, stat) {
-            if (err == null) {
-                //write the actual data and end with newline
-                var csv = json2csv(toCsv) + newLine;
-
-                fs.appendFile('file.csv', csv, function (err) {
-                    if (err) throw err;
-                    console.log('The "data to append" was appended to file!');
-                });
-            }
-            else {
-                //write the headers and newline
-                console.log('New file, just writing headers');
-                fields= (fields + newLine);
-
-                fs.writeFile('file.csv', fields, function (err, stat) {
-                    if (err) throw err;
-                    console.log('file saved');
-                });
-            }
-        });
+        // var toCsv = {
+        //     data: appendThis,
+        //     fields: fields
+        // };
+        //
+        // fs.stat('file.csv', function (err, stat) {
+        //     if (err == null) {
+        //         //write the actual data and end with newline
+        //         var csv = json2csv(toCsv) + newLine;
+        //
+        //         fs.appendFile('file.csv', csv, function (err) {
+        //             if (err) throw err;
+        //             console.log('The "data to append" was appended to file!');
+        //         });
+        //     }
+        //     else {
+        //         //write the headers and newline
+        //         console.log('New file, just writing headers');
+        //         fields= (fields + newLine);
+        //
+        //         fs.writeFile('file.csv', fields, function (err, stat) {
+        //             if (err) throw err;
+        //             console.log('file saved');
+        //         });
+        //     }
+        // });
         return res.status(200).send('SUCCESS');
     }
     return res.status(401).send('FORBIDDEN');
@@ -196,7 +202,7 @@ app.post('/createCustomer', urlencodedParser, function(req, res) {
         false, /* no token secret for oAuth 2.0 */
         realmId,
         true, /* use a sandbox account */
-        true, /* turn debugging on */
+        false, /* turn debugging on */
         4, /* minor version */
         '2.0', /* oauth version */
         token.refresh_token /* refresh token */);
@@ -209,8 +215,46 @@ app.post('/createCustomer', urlencodedParser, function(req, res) {
 
 });
 
+function queryCDC() {
+  if (!token_json) {
+    console.log('skipping CDC query, no access token');
+    return;
+  }
+
+  var token = JSON.parse(token_json);
+  var qbo = new QuickBooks(config.clientId,
+      config.clientSecret,
+      token.access_token, /* oAuth access token */
+      false, /* no token secret for oAuth 2.0 */
+      realmId,
+      true, /* use a sandbox account */
+      false, /* turn debugging on */
+      4, /* minor version */
+      '2.0', /* oauth version */
+      token.refresh_token /* refresh token */);
+
+  qbo.changeDataCapture(
+    ['Customer', 'Invoice', 'Payment'],
+    lastChangeDate,
+    function(err, changes) {
+        if (err) console.log(err)
+        else {
+          dynamodb.pushUpdates(AWS, realmId, changes.CDCResponse[0].QueryResponse);
+          lastChangeDate = Date.parse(changes.time);
+        }
+    },
+  );
+}
 
 // Start server on HTTP (will use ngrok for HTTPS forwarding)
-app.listen(8000, function () {
-    console.log('Example app listening on port 3000!')
+app.listen(8080, function () {
+    console.log('Example app listening on port 8080!')
+    console.log('Polling CDC')
+
+    AWS.config.update({
+      region: "us-east-2",
+      endpoint: "https://dynamodb.us-east-2.amazonaws.com"
+    });
+
+    setInterval(queryCDC, 3000);
 })

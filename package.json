@@ -10,6 +10,8 @@
   "license": "MIT",
   "homepage": "https://github.com/anilkumarbp/SampleApp-WebhookNotifications-nodejs",
   "dependencies": {
+    "aws-sdk": "^2.368.0",
+    "axios": "^0.18.0",
     "body-parser": "latest",
     "csrf": "^3.0.4",
     "dotenv": "latest",
@@ -17,6 +19,7 @@
     "express-handlebars": "latest",
     "express-session": "^1.14.2",
     "json2csv": "^3.11.5",
+    "nexmo": "^2.4.0",
     "node-quickbooks": "^2.0.21",
     "query-string": "^5.0.1",
     "request": "^2.78.0"
